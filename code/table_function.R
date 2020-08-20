@@ -1,5 +1,6 @@
 library(questionr)
 library(tidyverse)
+library(crayon)
 
 #' Create table for question
 #' 
@@ -206,22 +207,3 @@ table_maker <- function(data, questionnaire_object, questionnaire, choices, weig
 }
 
 '%!in%' = Negate('%in%')
-
-rounded_mean <- function(...){
-  round(...,digits = 0)
-}
-
-proportion <- function(data, variable, by = NULL, path = NULL, margin = 2, digits = 2){
-  if(is.null(by)){
-    result = round(prop.table(table(data[[variable]])) *100, digits = digits)
-  } else{
-    result = round(prop.table(table(data[[variable]],data[[by]]),margin = margin) *100, digits = digits)
-  }
-  
-  if(is.null(path)){
-    return(result)
-  } else{
-    write.csv(result, file = path)
-    return(result)
-  }
-}

@@ -1,11 +1,9 @@
-library(questionr)
-library(tidyverse)
-
 analyzer_prop <- function(x, data,
                      weighting_function = NULL, main_col_name = "Overall", ...) {
   strata <- list(...)
   strata <- unlist(strata)
   strata <- strata[!is.na(strata)]
+  cat(blue(paste0("----",round(match(x, names(select(data, -one_of(strata)))) / length(names(select(data, -one_of(strata)))) *100,2),"%\n\n")))
   data <- filter(data, !is.na(!!sym(x)))
   if (is.null(weighting_function)) {
     weights <- rep(1, nrow(data))
