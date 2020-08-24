@@ -3,6 +3,7 @@ library(readxl)
 library(readr)
 library(dplyr)
 library(composr)
+# library(hypegrammaR)
 
 
 #read dap
@@ -11,6 +12,7 @@ var_names<-dap$`Question Code`[which(!is.na(dap$`Question Code`))]
 
 #read aggregated data
 aggregated_data<-read_excel("./input/iset_aggregated_aug20-all-v7.xlsx")%>%type_convert()
+# aggregated_data<-load_data("./input/data.csv")
 names(aggregated_data) <- sub("[_]*","",names(aggregated_data))
 aggregated_data<-aggregated_data %>%filter(consent=="yes")
 aggregated_data$province[aggregated_data$province=="balkh"]<-"balkh_province"
