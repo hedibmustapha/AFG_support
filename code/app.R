@@ -52,7 +52,21 @@ ui <- fluidPage(
                            br(),
                            dataTableOutput("accom"),
                            br()),
-                  tabPanel("HOUSING LAND & PROPERTY"),
+                  tabPanel("HOUSING LAND & PROPERTY", br(), br(),
+                           plotOutput("host_relation"),
+                           br(),
+                           plotOutput("eviction"),
+                           br(),
+                           dataTableOutput("eviction_why"),
+                           br(),
+                           plotOutput("comm_represent"),
+                           br(),
+                           plotOutput("relocation"),
+                           br(),
+                           plotOutput("site_land"),
+                           br(),
+                           plotOutput("site_land_owner"),
+                           br()),
                   tabPanel("WASH"),
                   tabPanel("HEALTH"),
                   tabPanel("PROTECTION"),
@@ -143,6 +157,34 @@ server <- function(input, output, session) {
   output$accom<-renderDataTable({
     req(input$province)
     top_3_dt(province_data(),"accom","Top 3 reported accommodation arrangements that most residents held in order to occupy their shelter","Accommodation",survey,choices)
+  })
+  output$host_relation<-renderPlot({
+    req(input$province)
+    horizental_plot(province_data(),"host_relation","% of assessed sites by reported social relationship with host community")
+  })
+  output$eviction<-renderPlot({
+    req(input$province)
+    horizental_plot(province_data(),"eviction","KIs reported residents being threatened with eviction in the 3 months prior. Top 3 reported reasons for threats")
+  })
+  output$eviction_why<-renderDataTable({
+    req(input$province)
+    top_3_dt(province_data(),"eviction_why","Top 3 reported reasons for threats","Reasons",survey,choices)
+  })
+  output$comm_represent<-renderPlot({
+    req(input$province)
+    horizental_plot(province_data(),"comm_represent","KIs reported having NO community representation structures")
+  })
+  output$relocation<-renderPlot({
+    req(input$province)
+    horizental_plot(province_data(),"relocation","% of assessed sites, KIs reported authorities had attempted to relocate residents or forced residents to leave in the 2 years prior to data collection.")
+  })
+  output$site_land<-renderPlot({
+    req(input$province)
+    horizental_plot(province_data(),"site_land","% of  assessed  sites,  KIs  reported  knowing  who  owns  the  land on which this settlement sits")
+  })
+  output$site_land_owner<-renderPlot({
+    req(input$province)
+    horizental_plot(province_data(),"site_land_owner","Of these sites, % of sites with KIs reporting who owns the land where the site is located")
   })
 }
 

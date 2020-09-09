@@ -12,38 +12,38 @@ library(crayon)
 #' @param ... additional stratification variables to be applied
 analyzer <- function(x, in_questionnaire, data, 
                      #analysisplan, 
-                     weighting_function = NULL, main_col_name = "Overall",var_tosum, ...) {
+                      main_col_name = "Overall",var_tosum, ...) {
   #print(x)
   #cat(blue(paste0("----",round(match(x, analysisplan[["dependent.variable"]]) / length(analysisplan[["dependent.variable"]]) *100,0),"%\n\n")))
   cat(blue(paste0("----",round(match(x, colnames(data)) / ncol(data) *100,2),"%\n\n")))
   strata <- list(...)
   strata <- unlist(strata)
   strata <- strata[!is.na(strata)]
-  data <- filter(data, !is.na(!!sym(x)))
-  if (is.null(weighting_function)) {
-    weights <- rep(1, nrow(data))
-  } else {
-    weights <- weighting_function(data)
-  }
+  # data <- filter(data, !is.na(!!sym(x)))
+  # if (is.null(weighting_function)) {
+  #   weights <- rep(1, nrow(data))
+  # } else {
+  #   weights <- weighting_function(data)
+  # }
   
-  x_data <- data[[x]]
+  x_data <- data[[x]][which(!is.na(data[[x]]))]
   
   if (class(x_data) %in% c("logical", "numeric", "integer")) {
     if (in_questionnaire & x %!in% var_tosum) {
-      avg <- round(wtd.mean(x_data, weights = weights),2)
+      avg <- round(wtd.mean(x_data),2)
       table <- tibble("data" = c(x, "Average"), !!main_col_name := c(main_col_name, avg))
     } else if (min(x_data) >= 0 & max(x_data) <= 1 & x %!in% var_tosum) {
-      avg <- 100 * round(wtd.mean(x_data, weights = weights), 2)
+      avg <- 100 * wtd.mean(x_data)
       table <- tibble("data" = c(x, "Average"), !!main_col_name := c(main_col_name, avg))
     } else if (x %in% var_tosum){
-      sum<- sum(x_data,na.rm = T)
+      sum<- sum(x_data)
       table <- tibble("data" = c(x, "Sum"), !!main_col_name := c(main_col_name, sum))
     } else {
-      avg <- round(wtd.mean(x_data, weights = weights),2)
+      avg <- wtd.mean(x_data)
       table <- tibble("data" = c(x, "Average"), !!main_col_name := c(main_col_name, avg))
     }
   } else {
-    table <- wtd.table(x_data, rep(1, length(x_data)), weights = weights)
+    table <- wtd.table(x_data, rep(1, length(x_data)))
     if(is_empty(table)) {
       table <- tibble("data" = "", !!main_col_name := "")
     } else {
@@ -67,7 +67,7 @@ analyzer <- function(x, in_questionnaire, data,
         new_data <- filter(data, !!sym(strata[[i]]) == groups[j])
         new_table <- analyzer(x, in_questionnaire, new_data, 
                               #analysisplan, 
-                              weighting_function, groups[j],var_tosum, NA)
+                              groups[j],var_tosum, NA)
         table <- left_join_NA(table, new_table, by = "data")
       }
     }
@@ -80,10 +80,10 @@ left_join_NA <- function(x, y, ...) {
     mutate_each(list(~replace(., which(is.na(.)), 0)))
 }
 
-table_maker <- function(data, questionnaire_object, questionnaire, choices, weighting_function = NULL, 
+table_maker <- function(data, questionnaire_object, questionnaire, choices, 
                         #analysisplan, 
                         labels = T, language = NULL, 
-                        main_col_name = "overall", var_tosum, ...) {
+                        main_col_name = "Overall", var_tosum, ...) {
   # collecting strata information
   strata <- list(...)
   strata <- strata[!is.na(strata)]
@@ -92,6 +92,7 @@ table_maker <- function(data, questionnaire_object, questionnaire, choices, weig
   #var.names <- names(data)
   # remove the text column for select multiple
   sel_mul <- filter(questionnaire, str_detect(type, "select_multiple"))$name
+  sel_mul<-sel_mul[which(sel_mul %in% names(data))]
   data <- select(data, -one_of(sel_mul))
   
   # getting analysis names, don't analyze strata
@@ -114,7 +115,6 @@ table_maker <- function(data, questionnaire_object, questionnaire, choices, weig
                                    analyzer, 
                                    data,
                                    #analysisplan,
-                                   weighting_function,
                                    main_col_name,
                                    var_tosum,
                                    strata))
@@ -123,8 +123,7 @@ table_maker <- function(data, questionnaire_object, questionnaire, choices, weig
                                    in_questionnaire, 
                                    analyzer,
                                    #analysisplan,
-                                   data, 
-                                   weighting_function,
+                                   data,
                                    main_col_name,
                                    var_tosum))
   }
@@ -133,15 +132,17 @@ table_maker <- function(data, questionnaire_object, questionnaire, choices, weig
   # Removes extra rows so that we end up with # of rows for # of options
   
   #if(sum(unlist(purrr::map(var.names, questionnaire_object$question_is_select_multiple)))>0){}
-    
+  if(length(sel_mul)>0){
     sel_mul_rgx <- paste0(sel_mul, "(\\/|\\.)")
     sel_mul_extract_rgx <- paste0("(", str_c(sel_mul, collapse = "|"), ")")
     sel_mul_remove_rgx <- paste0("(", str_c(sel_mul_rgx, collapse = "|"), ")")
     
     table_output <- table_output %>%
-      mutate(sel_mul = str_extract(data, sel_mul_extract_rgx))
-    num_var_indices <- which(unlist(purrr::map(table_output[, 1], questionnaire_object$question_is_numeric))) +1
-    avg_indices <- which(table_output[, 1] == "Average")
+      mutate(sel_mul = str_extract(data, sel_mul_remove_rgx))
+    table_output$sel_mul<-gsub("[.]","",table_output$sel_mul)
+    temp<-questionnaire_object$raw_questionnaire()$questions %>% filter(type %in% c("integer","calculate","decimal"))%>%pull(name)
+    num_var_indices<-which(table_output$data %in% temp)+1
+    avg_indices <- which(table_output[, 1] %in% c("Average","Sum"))
     avg_indices <- avg_indices[! avg_indices %in% num_var_indices]
     
     table_output[avg_indices, 1] <- table_output[avg_indices - 1, 1]
@@ -155,12 +156,12 @@ table_maker <- function(data, questionnaire_object, questionnaire, choices, weig
     # Also removing select multiple binary option from the main question
     
     table_output[,1] <- ifelse(table_output[,2] == main_col_name & str_detect(table_output[,1], sel_mul_remove_rgx),
-                               str_extract(table_output[,1], sel_mul_extract_rgx),
-                               table_output[,1])
+                             gsub("[.].*","",table_output[,1]),
+                             table_output[,1])
     
     table_output[,1] <- ifelse(table_output[,2] != main_col_name,
                                str_remove_all(table_output[,1], sel_mul_remove_rgx),
-                               table_output[,1])
+                               table_output[,1])}
   
   # Getting question labels if requested
   

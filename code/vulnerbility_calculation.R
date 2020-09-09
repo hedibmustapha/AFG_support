@@ -11,12 +11,12 @@ vulnerability_data<-aggregated_data %>% mutate(
   adaptative_capacity_index1 = case_when(
     aid_govt == "yes" ~ 0,
     aid_govt == "no" ~ 3,
-    aid_govt == "dont_know" ~ NA_real_
+    aid_govt %in% c("no_consensus","dont_know") ~ NA_real_
   ),
   coping_capacity_index1 = case_when(
     soap_avail == "yes" ~ 0,
     soap_avail == "no" ~ 3,
-    soap_avail == "dont_know" ~ NA_real_
+    soap_avail %in% c("no_consensus","dont_know") ~ NA_real_
   ),
   coping_capacity_index2 = case_when(
     handwash_crowded == "yes" ~ 3,
@@ -28,26 +28,12 @@ vulnerability_data<-aggregated_data %>% mutate(
     health_distance %in% c("yes","no_further") ~ 0
   ),
   coping_capacity_index4 = case_when(
-    sm_selected(health_barrier,any = c("where_confuse",
-                                       "cost_transport",
-                                       "cost_treat",
-                                       "cost_drugs",
-                                       "safety",
-                                       "travel_time",
-                                       "centre_capacity",
-                                       "denied",
-                                       "other")) ~ 3,
-    sm_selected(health_barrier, exactly = c("none")) ~ 0
+    health_barrier.none == 0 ~ 3,
+    health_barrier.none == 1 ~ 0
   ),
   adaptative_capacity_index2 = case_when(
-    sm_selected(mhpss_secondary,any = c("more_gbv",
-                                        "more_poverty",
-                                        "health_issue",
-                                        "comm_violence",
-                                        "more_insecure",
-                                        "no_ngo_access",
-                                        "other")) ~ 3,
-    sm_selected(mhpss_secondary, exactly = c("none")) ~ 0
+    mhpss_secondary.none == 0 ~ 3,
+    mhpss_secondary.none == 1 ~ 0
   ),
   susceptability_index3 = case_when(
     shelter_type %in% c("tent",
@@ -58,7 +44,7 @@ vulnerability_data<-aggregated_data %>% mutate(
                         "unfinished",
                         "damaged") ~ 2,
     shelter_type %in% c("mud","brick") ~ 0,
-    shelter_type == "other" ~ NA_real_
+    shelter_type %in% c("no_consensus","other") ~ NA_real_
   ),
   susceptability_index4 = case_when(
     vul_sleeping_space > 4 ~ 2,
@@ -72,7 +58,7 @@ vulnerability_data<-aggregated_data %>% mutate(
     livelihood %in% c("formal",
                       "livestock",
                       "farm_crop") ~ 0,
-    livelihood == "other" ~ NA_real_
+    livelihood %in% c("no_consensus","other") ~ NA_real_
   ),
   susceptability_index6 = case_when(
     work_change %in% c("full_stop",
@@ -80,15 +66,8 @@ vulnerability_data<-aggregated_data %>% mutate(
     work_change == "no_stop" ~ 0
   ),
   adaptative_capacity_index3 = case_when(
-    sm_selected(covid_safeprac, exactly = c("none")) ~ 3,
-    sm_selected(covid_safeprac, any = c("handwash",
-                                        "distancing",
-                                        "isolate",
-                                        "masks_ifsick",
-                                        "masks", 
-                                        "no_face",
-                                        "no_gather",
-                                        "other")) ~ 0
+    covid_safeprac.none == 1 ~ 3,
+    covid_safeprac.none == 0 ~ 0
   )
 ) %>% mutate(
   vulnerability_score = rowSums(select(.,susceptability_index1:adaptative_capacity_index3),na.rm = T) / 36,
@@ -110,7 +89,7 @@ analysis_vulnerability_data<- table_maker_prop(data = vulnerability_data_to_anal
                                                questionnaire = questions,
                                                choices = choices,
                                                weighting_function = NULL,
-                                               labels = T,
+                                               labels = F,
                                                language = NULL,
                                                main_col_name = "overall",
                                                "region",
@@ -123,4 +102,4 @@ analysis_vulnerability_data<- table_maker_prop(data = vulnerability_data_to_anal
                                                "return_status",
                                                "location_type",
                                                "site_type")
-analysis_vulnerability_data %>% write_csv("./output/vulnerability_calculation.csv")
+analysis_vulnerability_data %>% write_csv("./output/vulnerability_calculation_regional_analysis.csv")

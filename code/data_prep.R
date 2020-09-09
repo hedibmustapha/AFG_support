@@ -7,11 +7,11 @@ library(composr)
 
 
 #read dap
-dap<-read_excel("./input/AFG_ISETs_siteprofiling_DAP_fordataunit_15.08.2020.xlsx",sheet = 3)
+dap<-read_excel("./input/AFG_ISETs_siteprofiling_DAP_fordataunit_15.08.2020_hedi.xlsx",sheet = 3)
 var_names<-dap$`Question Code`[which(!is.na(dap$`Question Code`))]
 
 #read aggregated data
-aggregated_data<-read_excel("./input/iset_aggregated_aug20-all-v7.xlsx")%>%type_convert()
+aggregated_data<-read_excel("./input/iset_aggregated_aug20-all-v8.xlsx")%>%type_convert()
 # aggregated_data<-load_data("./input/data.csv")
 names(aggregated_data) <- sub("[_]*","",names(aggregated_data))
 aggregated_data<-aggregated_data %>%filter(consent=="yes")
@@ -22,8 +22,7 @@ aggregated_data$province[aggregated_data$province=="kabul"]<-"kabul_province"
 aggregated_data$province[aggregated_data$province=="kandahar"]<-"kandahar_province"
 aggregated_data$province[aggregated_data$province=="kunduz"]<-"kunduz_province"
 aggregated_data$province[aggregated_data$province=="sar_e_pul"]<-"sar_e_pul_province"
-
-dap_data<-select(aggregated_data,contains(var_names))
+aggregated_data$total_sites<-replicate(nrow(aggregated_data),1)
 
 #read non-aggregated data
 nonaggregated_data<-read_excel("./input/iset_clean_data_june2020.xlsx", sheet = "all")%>%type_convert()
@@ -47,9 +46,9 @@ nonaggregated_data<-nonaggregated_data%>% mutate(
     location %in% c("prov_centre","dist_centre","other_city") ~ "urban"
   ),
   region = case_when(
-    province %in% c("bamyan",
+    province %in% c("bamyan_province",
                     "daykundi",
-                    "kabul",
+                    "kabul_province",
                     "kapisa",
                     "logar",
                     "maidan_wardak",
@@ -59,26 +58,30 @@ nonaggregated_data<-nonaggregated_data%>% mutate(
                     "laghman",
                     "nangarhar",
                     "nuristan") ~ "east",
-    province %in% c("balkh",
+    province %in% c("balkh_province",
                     "faryab",
                     "jawzjan",
                     "samangan",
-                    "sar_e_pul") ~ "north",
+                    "sar_e_pul_province") ~ "north",
     province %in% c("badakhshan",
                     "baghlan",
                     "kunduz",
-                    "takhar") ~ "north_east",
+                    "takhar",
+                    "kunduz_province") ~ "north_east",
     province %in% c("helmand",
-                    "kandahar",
+                    "kandahar_province",
                     "nimroz",
                     "uruzgan",
                     "zabul") ~ "south",
-    province %in% c("ghazni",
+    province %in% c("ghazni_province",
                     "khost",
                     "paktika",
                     "paktya") ~ "south_east",
-    TRUE ~ "west"
-    
+    province %in% c("badghis",
+                    "farah",
+                    "ghor",
+                    "herat") ~ "west"
+
   ),
   total_hhs = rowSums(select(.,idp_hhs,prolonged_hhs,protracted_hhs,refugee_hhs,returnee_hhs,economic_hhs),na.rm = T),
   total_hhs=ifelse(total_hhs==0,NA,total_hhs),
@@ -205,7 +208,7 @@ aggregated_data<-aggregated_data %>% mutate(
   vul_elderly = elderly / total_indvl,
   vul_chronic_fs = ifelse(vul_elderly>0.05,1,0),
   prop_female_hoh = female_hoh / total_hhs,
-  using_public_facility = ifelse(sm_selected(handwash_location,any = c("public","public_facility")),1,0),
+  using_public_facility = ifelse(handwash_location.public == 1 | handwash_location.public_facility == 1,1,0),
   water_distance_fs= case_when(
     water_distance %in% c("no_further","no_none") ~ "yes",
     water_distance =="yes" ~ "no",
@@ -243,9 +246,9 @@ aggregated_data<-aggregated_data %>% mutate(
   vul_sleeping_space = hh_size / (hh_rooms_space_isolate),
   vul_sleeping_prop = ifelse(vul_sleeping_space>=4,1,0),
   region = case_when(
-    province %in% c("bamyan",
+    province %in% c("bamyan_province",
                     "daykundi",
-                    "kabul",
+                    "kabul_province",
                     "kapisa",
                     "logar",
                     "maidan_wardak",
@@ -255,25 +258,29 @@ aggregated_data<-aggregated_data %>% mutate(
                     "laghman",
                     "nangarhar",
                     "nuristan") ~ "east",
-    province %in% c("balkh",
+    province %in% c("balkh_province",
                     "faryab",
                     "jawzjan",
                     "samangan",
-                    "sar_e_pul") ~ "north",
+                    "sar_e_pul_province") ~ "north",
     province %in% c("badakhshan",
                     "baghlan",
                     "kunduz",
-                    "takhar") ~ "north_east",
+                    "takhar",
+                    "kunduz_province") ~ "north_east",
     province %in% c("helmand",
-                    "kandahar",
+                    "kandahar_province",
                     "nimroz",
                     "uruzgan",
                     "zabul") ~ "south",
-    province %in% c("ghazni",
+    province %in% c("ghazni_province",
                     "khost",
                     "paktika",
                     "paktya") ~ "south_east",
-    TRUE ~ "west"
+    province %in% c("badghis",
+                    "farah",
+                    "ghor",
+                    "herat") ~ "west"
     
   ),
   tenure_sec_insec = case_when(
@@ -313,15 +320,11 @@ aggregated_data<-aggregated_data %>% mutate(
 )
 
 #adding variables to the dap_data
-dap_data<-dap_data %>% mutate(
+dap_data<-aggregated_data %>% mutate(
   location_fs=case_when(
     location == "rural" ~ "rural",
     location == "suburb" ~ "suburb",
     location %in% c("prov_centre","dist_centre","other_city") ~ "urban"
-  ),
-  idp_3mo_hhs_prop=case_when(
-    idp_3mo_hhs>0 ~ 1,
-    is.na(idp_3mo_hhs) | idp_3mo_hhs==0 ~ 0
   ),
   idp_mixed=case_when(
     iset_population =="mixed" & migrant_population.idp==1 ~ 1,
@@ -379,6 +382,10 @@ dap_data<-dap_data %>% mutate(
     iset_population =="discrete" & migrant_population.nomad==1 ~ 1,
     migrant_population.nomad==0 ~ 0
   ),
+  idp_3mo_hhs_prop=case_when(
+    idp_3mo_hhs>0 ~ 1,
+    is.na(idp_3mo_hhs) | idp_3mo_hhs==0 ~ 0
+  ),
   caseload_hhs = rowSums(select(.,idp_hhs,prolonged_hhs,protracted_hhs,refugee_hhs,returnee_hhs),na.rm = T),
   caseload_hhs=ifelse(caseload_hhs==0,NA,caseload_hhs),
   caseload_indvl = rowSums(select(.,idp_indvl,prolonged_indvl,protracted_indvl,refugee_indvl,returnee_indvl),na.rm = T),
@@ -394,12 +401,12 @@ dap_data<-dap_data %>% mutate(
   hh_size = total_indvl / total_hhs,
   caseload_prop = caseload_hhs/total_hhs,
   prop_disability = disability / total_hhs,
-  vul_chronic = chronic_ill / total_hhs,
+  vul_chronic =  chronic_ill / total_hhs,
   vul_chronic_fs = ifelse(vul_chronic>0.05,1,0),
   vul_elderly = elderly / total_indvl,
-  vul_chronic_fs = ifelse(vul_elderly>0.05,1,0),
+  vul_elderly_fs = ifelse(vul_elderly>0.05,1,0),
   prop_female_hoh = female_hoh / total_hhs,
-  using_public_facility = ifelse(sm_selected(handwash_location,any = c("public","public_facility")),1,0),
+  using_public_facility = ifelse(ifelse(handwash_location.public == 1 | handwash_location.public_facility == 1,1,0),1,0),
   water_distance_fs= case_when(
     water_distance %in% c("no_further","no_none") ~ "yes",
     water_distance =="yes" ~ "no",
@@ -423,9 +430,8 @@ dap_data<-dap_data %>% mutate(
   health_unsatisfy_constraint.dont_know=ifelse(health_use_recent!="yes",NA,health_use_unsatisfy.dont_know),
   health_unsatisfy_constraint.prefer_not=ifelse(health_use_recent!="yes",NA,health_use_unsatisfy.prefer_not),
   tenure_insecure = case_when(
-    tenure %in% c("verbal","none","dont_know","prefer_not") ~ "yes",
-    tenure == "written" ~ "no",
-    tenure == "no_consensus" ~ "NC"
+    tenure %in% c("verbal","none","dont_know","prefer_not","no_consensus") ~ "yes",
+    tenure == "written" ~ "no"
   ),
   access_school= case_when(
     school_distance %in% c("no_further","yes") ~ "yes",
@@ -437,9 +443,9 @@ dap_data<-dap_data %>% mutate(
   vul_sleeping_space = hh_size / (hh_rooms_space_isolate),
   vul_sleeping_prop = ifelse(vul_sleeping_space>=4,1,0),
   region = case_when(
-    province %in% c("bamyan",
+    province %in% c("bamyan_province",
                     "daykundi",
-                    "kabul",
+                    "kabul_province",
                     "kapisa",
                     "logar",
                     "maidan_wardak",
@@ -449,25 +455,29 @@ dap_data<-dap_data %>% mutate(
                     "laghman",
                     "nangarhar",
                     "nuristan") ~ "east",
-    province %in% c("balkh",
+    province %in% c("balkh_province",
                     "faryab",
                     "jawzjan",
                     "samangan",
-                    "sar_e_pul") ~ "north",
+                    "sar_e_pul_province") ~ "north",
     province %in% c("badakhshan",
                     "baghlan",
                     "kunduz",
-                    "takhar") ~ "north_east",
+                    "takhar",
+                    "kunduz_province") ~ "north_east",
     province %in% c("helmand",
-                    "kandahar",
+                    "kandahar_province",
                     "nimroz",
                     "uruzgan",
                     "zabul") ~ "south",
-    province %in% c("ghazni",
+    province %in% c("ghazni_province",
                     "khost",
                     "paktika",
                     "paktya") ~ "south_east",
-    TRUE ~ "west"
+    province %in% c("badghis",
+                    "farah",
+                    "ghor",
+                    "herat") ~ "west"
     
   ),
   tenure_sec_insec = case_when(
@@ -506,6 +516,8 @@ dap_data<-dap_data %>% mutate(
   
 )
 
+dap_data<-select(dap_data,starts_with(var_names))
+
 #names of the variable to which we will apply sum rather than proportion/average
 var_tosum<-c("idp_hhs",
              "idp_indvl",
@@ -533,4 +545,5 @@ var_tosum<-c("idp_hhs",
              "caseload_hhs",
              "caseload_indvl",
              "total_hhs",
-             "total_indvl")
+             "total_indvl",
+             "total_sites")

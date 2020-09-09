@@ -1,6 +1,6 @@
 source("./code/data_merge_functions.R")
 
- dm_overall <- vulnerability_data %>%
+ dm_overall <- parent_created %>%
   summarise(
     nb_sites = n(),
     idp_hhs = sum(idp_hhs,na.rm = T),
@@ -260,7 +260,7 @@ source("./code/data_merge_functions.R")
  
  dm_overall %>% write_csv("./output/datamerge_overall.csv")
  
- dm_region <- vulnerability_data %>%
+ dm_region <- parent_created %>%
    group_by(region) %>%
    summarise(
      nb_sites = n(),
@@ -520,7 +520,7 @@ source("./code/data_merge_functions.R")
    )
 dm_region %>% write_csv("./output/datamerge_region.csv")
 
-dm_province <- vulnerability_data %>%
+dm_province <- parent_created %>%
   group_by(province) %>%
   summarise(
     nb_sites = n(),
@@ -780,7 +780,7 @@ dm_province <- vulnerability_data %>%
   )
 dm_province %>% write_csv("./output/datamerge_province.csv")
 
-dm_district <- vulnerability_data %>%
+dm_district <- parent_created %>%
   group_by(district) %>%
   summarise(
     nb_sites = n(),
@@ -803,7 +803,7 @@ dm_district <- vulnerability_data %>%
     iset_population_discrete = percent_response(iset_population,.,"discrete"),
     iset_population_mixed = percent_response(iset_population,.,"mixed"),
     location_urban = percent_response(location_fs,.,"urban"),
-    location_suburban = percent_response(location_fs,.,"suburban"),
+    location_suburban = percent_response(location_fs,.,"suburb"),
     location_rural = percent_response(location_fs,.,"rural"),
     idp_mixed = round(mean(idp_mixed,na.rm = T)*100,2),
     idp_discrete = round(mean(idp_discrete,na.rm = T)*100,2),

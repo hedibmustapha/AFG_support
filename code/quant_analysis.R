@@ -4,8 +4,8 @@ source("code/table_proportion.R")
 library(koboquest)
 library(parallel)
 
-questions <- read_excel("./input/reach_afg_isets_kobo_siteprofiling_rollout_edited.xlsx",1)
-choices <- read_excel("./input/reach_afg_isets_kobo_siteprofiling_rollout_edited.xlsx",2)
+questions <- read_excel("./input/reach_afg_isets_kobo_siteprofiling_no_consensus_for_hedi.xlsx",1)
+choices <- read_excel("./input/reach_afg_isets_kobo_siteprofiling_no_consensus_for_hedi.xlsx",2)
 
 questionnaire<-load_questionnaire(data = aggregated_data,
                                   questions = questions,
@@ -30,7 +30,7 @@ analysis_aggregated_data <- table_maker(data = aggregated_data_to_analyze,
                                    weighting_function = NULL,
                                    labels = T,
                                    language = NULL,
-                                   main_col_name = "overall",
+                                   main_col_name = "Overall",
                                    var_tosum = var_tosum,
                                    "region",
                                    "province",
@@ -82,7 +82,6 @@ analysis_nonaggregated_data %>% write_csv("./output/KI_nonaggregated_data_analys
 dap_data <- mutate_if(dap_data, is.character, na_if, "")
 dap_to_analyze <- dap_data %>% 
   select(-one_of(text)) %>%
-  select(-ki_gender,-ki_age, -consent) %>%
   select_if(~ !(all(is.na(.x)) | all(. == "")))
 
 analysis_dap <- table_maker(data = dap_to_analyze,
@@ -90,7 +89,7 @@ analysis_dap <- table_maker(data = dap_to_analyze,
                             questionnaire = questions,
                             choices = choices,
                             weighting_function = NULL,
-                            labels = T,
+                            labels = F,
                             language = NULL,
                             main_col_name = "overall",
                             var_tosum = var_tosum,
@@ -106,4 +105,25 @@ analysis_dap <- table_maker(data = dap_to_analyze,
                             "location_type",
                             "site_type")
 
-analysis_dap %>% write_csv("./output/dap_aggregated_data_analysis.csv")
+analysis_dap %>% write_csv("./output/dap_analysis.csv")
+
+
+analysis_dap<- table_maker(data = dap_to_analyze,
+                            questionnaire_object = questionnaire,
+                            questionnaire = questions,
+                            choices = choices,
+                            labels = F,
+                            language = NULL,
+                            main_col_name = "Overall",
+                            var_tosum = var_tosum,
+                           "region",
+                           "province",
+                           "district",
+                           "tenure_sec_insec",
+                           "access_toservice",
+                           "shelter_condition",
+                           "over_less_5years",
+                           "mixed_sep_popn",
+                           "return_status",
+                           "location_type",
+                           "site_type")

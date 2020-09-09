@@ -24,10 +24,11 @@ dap<-load_analysisplan("./input/dap.csv")
 
 dap %>% readr::write_csv("./input/dap_final.csv.")
 
-results <- from_analysisplan_map_to_output(data = vulnerability_data,
+results <- from_analysisplan_map_to_output(data = dap_data,
                                            analysisplan = dap,
                                            weighting = NULL,
                                            questionnaire = questionnaire)
+
 labeled_results <- lapply(results$results, map_to_labeled,questionnaire)
 hypegrammaR::map_to_master_table(results_object = labeled_results,
                                  filename ="./output/result_hypegrammaR.csv")
