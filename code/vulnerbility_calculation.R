@@ -1,5 +1,5 @@
 
-vulnerability_data<-aggregated_data %>% mutate(
+vulnerability_data<-dap_data %>% mutate(
   susceptability_index1 = case_when(
     vul_chronic >= 0.05 ~ 2,
     vul_chronic < 0.05 ~ 0

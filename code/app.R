@@ -2,8 +2,9 @@ library(shiny)
 library(dplyr)
 library(ggplot2)
 library(DT)
+library(readxl)
 
-data <- read.csv("./input/data.csv")
+data <- read_excel("./input/iset_aggregated_aug20-all-v8.xlsx")
 data<-data %>% filter(consent == "yes")
 sectors <- c("DEMOGRAPHICS", "MOVEMENT & INTENTIONS", "SHELTER", "HOUSING LAND & PROPERTY", "WASH", "HEALTH", "PROTECTION",
              "FOOD SECURITY & LIVELIHOOD")
