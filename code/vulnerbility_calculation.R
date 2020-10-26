@@ -35,6 +35,10 @@ vulnerability_data<-dap_data %>% mutate(
     mhpss_secondary.none == 0 ~ 3,
     mhpss_secondary.none == 1 ~ 0
   ),
+  adaptative_capacity_index3 = case_when(
+    sm_selected(covid_coping, any = c("withdraw","angry","risky_behave","physical_ache","substance","other")) ~ 3,
+    covid_coping == "none" ~ 0
+  ),
   susceptability_index3 = case_when(
     shelter_type %in% c("tent",
                         "makeshift",
@@ -102,4 +106,4 @@ analysis_vulnerability_data<- table_maker_prop(data = vulnerability_data_to_anal
                                                "return_status",
                                                "location_type",
                                                "site_type")
-analysis_vulnerability_data %>% write_csv("./output/vulnerability_calculation_regional_analysis.csv")
+analysis_vulnerability_data %>% write_csv("./output/vulnerability_calculation_13102020.csv")
